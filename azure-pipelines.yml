@@ -8,6 +8,7 @@ variables:
   tag: '$(Build.BuildId)'
   imageName: meal
   dockerRegistry: docker.io/jayj7568
+  fullImageName: '$(dockerRegistry)/$(imageName):$(tag)'
 
 stages:
 - stage: BuildAndPush
@@ -23,17 +24,17 @@ stages:
     - checkout: self
 
     - script: |
-        echo "Image tag: $(dockerRegistry)/$(imageName):$(tag)"
+        echo "Image will be built as: $(fullImageName)"
       displayName: Show full image name
 
-    - task: Docker@2
-      displayName: Build Docker image
-      inputs:
-        command: build
-        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-        tags: |
-          $(dockerRegistry)/$(imageName):$(tag)
+    - script: |
+        docker build -t $(fullImageName) .
+      displayName: Docker Build
 
     - script: |
-        docker push $(dockerRegistry)/$(imageName):$(tag)
-      displayName: Push Docker image
+        docker images
+      displayName: List Docker Images
+
+    - script: |
+        docker push $(fullImageName)
+      displayName: Docker Push
