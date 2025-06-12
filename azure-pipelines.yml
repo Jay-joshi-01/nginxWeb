@@ -1,0 +1,61 @@
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  imageName: meal
+  dockerRegistry: docker.io/jayj7568
+
+stages:
+- stage: BuildAndPush
+  displayName: Build and Push Docker Image
+  jobs:
+  - job: Build
+    displayName: Build and Push
+    pool:
+      name: MyPool
+      demands:
+        - Agent.Name -equals jayRunner
+    steps:
+    - checkout: self
+
+    - task: Docker@2
+      displayName: Build Docker image
+      inputs:
+        command: build
+        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
+        tags: |
+          $(dockerRegistry)/$(imageName):$(tag)
+
+    - task: Docker@2
+      displayName: Push Docker image
+      inputs:
+        command: push
+        tags: |
+          $(dockerRegistry)/$(imageName):$(tag)
+
+# - stage: Deploy
+#   displayName: SSH Deploy to Server
+#   dependsOn: BuildAndPush
+#   condition: succeeded()
+#   jobs:
+#   - job: DeployJob
+#     displayName: SSH Deploy
+#     pool:
+#       name: MyPool
+#       demands:
+#         - Agent.Name -equals jayRunner
+#     steps:
+#     - script: |
+#         ssh your-ssh-user@your-server << EOF
+#         echo "Deploying Docker image..."
+#         docker login $(dockerRegistry) -u $(DOCKER_USERNAME) -p $(DOCKER_PASSWORD)
+#         docker pull $(dockerRegistry)/$(imageName):$(tag)
+#         docker stop app || true
+#         docker rm app || true
+#         docker run -d --name app -p 80:80 $(dockerRegistry)/$(imageName):$(tag)
+#         EOF
+#       displayName: 'SSH into Server and Deploy'
