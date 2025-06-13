@@ -1,0 +1,44 @@
+trigger: none  # Only run manually
+
+parameters:
+- name: imageTag
+  displayName: Docker Image Tag
+  type: string
+  default: 'latest'
+
+- name: targetHost
+  displayName: Target Server IP or Hostname
+  type: string
+  default: 'your.server.ip'
+
+# - name: sshUser
+#   displayName: SSH User
+#   type: string
+#   default: 'ubuntu'
+
+variables:
+  imageName: meal
+  dockerRegistry: docker.io/jayj7568
+
+stages:
+- stage: Deploy
+  displayName: Deploy to Remote Host
+  jobs:
+  - job: DeployJob
+    displayName: SSH and Deploy
+    pool:
+      name: MyPool
+      demands:
+        - Agent.Name -equals jayRunner
+    steps:
+    - checkout: none
+
+    - script: |
+        echo "Deploying image: $(dockerRegistry)/$(imageName):${{ parameters.imageTag }}"
+        # ssh -o StrictHostKeyChecking=no ${{ parameters.sshUser }}@${{ parameters.targetHost }} << 'EOF'
+        #   docker pull $(dockerRegistry)/$(imageName):${{ parameters.imageTag }}
+        #   docker stop ${{ parameters.imageName }} || true
+        #   docker rm ${{ parameters.imageName }} || true
+        #   docker run -d --name ${{ parameters.imageName }} -p 80:80 $(dockerRegistry)/$(imageName):${{ parameters.imageTag }}
+        # EOF
+      displayName: SSH Deploy
